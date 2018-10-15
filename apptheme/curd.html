@@ -1,0 +1,254 @@
+<html>  
+<head>  
+    <title></title>  
+  
+    <style type="text/css">  
+        table {  
+            border: 1px solid #777;  
+            border-collapse: collapse;  
+        }  
+  
+            table tr th,  
+            table tr td {  
+                border: 1px solid #777;  
+            }  
+    </style>  
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>  
+    <script src="Scripts/IndexedDB-getAll-shim.js"></script>  
+    <script type="text/javascript">  
+  
+        $(document).ready(function () {  
+            debugger;  
+            // windowwindow.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;  
+            var request, db;  
+  
+  
+            // Code for declare database and check browser capibility  
+            if (!window.indexedDB) {  
+                console.log("Your Browser does not support IndexedDB");  
+            }  
+            else {  
+                request = window.indexedDB.open("testDBFinal", 25);  
+                request.onerror = function (event) {  
+                    console.log("Error opening DB", event);  
+                }  
+                request.onupgradeneeded = function (event) {  
+                    console.log("Upgrading");  
+                    db = event.target.result;  
+                    var objectStore = db.createObjectStore("students", { keyPath: "rollNo", autoIncrement: true });  
+                     
+                }  
+                request.onsuccess = function (event) {  
+                    console.log("Success opening DB");  
+                    db = event.target.result;  
+  
+                }  
+            }  
+  
+            // Code for Add New Record in IndexedDB  
+            $("#addBtn").click(function () {  
+                debugger;  
+                var firstName = $('#firstName').val();  
+                var lastName = $('#lastName').val();  
+                var city = $('#city').val();  
+                var mobile = $('#mobile').val();  
+  
+                var transaction = db.transaction(["students"], "readwrite");  
+  
+                var objectStore = transaction.objectStore("students");  
+                objectStore.add({ FirstName: firstName, LastName: lastName, City: city, Mobile: mobile });  
+  
+                transaction.oncomplete = function (event) {  
+                    console.log("Success :)");  
+                    $('#result').html("Add: Successfully");  
+  
+                };  
+  
+                transaction.onerror = function (event) {  
+                    console.log("Error :)");  
+                    $('#result').html("Add: Error occurs in inserting");  
+                };  
+  
+  
+                ClearTextBox();  
+                showAllDataMethod();  
+  
+            });  
+  
+  
+            // Code for Read Data from Indexed on for edit(Single Record)  
+            $('#btnShow').click(function () {  
+                debugger;  
+                var id = parseInt($('#txtSearch').val());  
+                var request = db.transaction(["students"], "readonly").objectStore("students").get(id);  
+                request.onsuccess = function (event) {  
+                    var r = request.result;  
+                    if (r != null) {  
+                        $('#firstName').val(r.FirstName);  
+                        $('#lastName').val(r.LastName);  
+                        $('#city').val(r.City);  
+                        $('#mobile').val(r.Mobile);  
+                    } else {  
+                        ClearTextBox();  
+                        alert('Record Does not exist');  
+                    }  
+  
+                };  
+            });  
+  
+  
+            // Code for Clear text Box  
+            $('#clearBtn').click(function () {  
+                ClearTextBox();  
+  
+            });  
+  
+  
+            function ClearTextBox() {  
+                $('#firstName').val('');  
+                $('#lastName').val('');  
+                $('#city').val('');  
+                $('#mobile').val('');  
+                $('#txtSearch').val('');  
+            }  
+  
+            // Code for Update record on IndexedDB  
+            $('#updateBtn').click(function () {  
+  
+                var rollNo = parseInt($('#txtSearch').val());  
+                var firstName = $('#firstName').val();  
+                var lastName = $('#lastName').val();  
+                var city = $('#city').val();  
+                var mobile = $('#mobile').val();  
+  
+                var transaction = db.transaction(["students"], "readwrite");  
+                var objectStore = transaction.objectStore("students");  
+                var request = objectStore.get(rollNo);  
+                request.onsuccess = function (event) {  
+  
+                    request.result.FirstName = firstName;  
+                    request.result.LastName = lastName;  
+                    request.result.City = city;  
+                    request.result.Mobile = mobile;  
+                    objectStore.put(request.result);  
+                    alert('Recored Updated Successfully !!!');  
+                };  
+  
+            });  
+  
+  
+            //Code for Deleting record from indexedDB  
+            $('#deleteBtn').click(function () {  
+                var id = parseInt($('#txtSearch').val());  
+                db.transaction(["students"], "readwrite").objectStore("students").delete(id);  
+                alert(' Recored No. ' + id + ' Deleted Successfully !!!');  
+                showAllDataMethod();  
+            });  
+  
+            $('#btnShowAll').click(function () {  
+                //Calling funtin for show all data from IndexedDB  
+                showAllDataMethod();  
+            });  
+  
+  
+  
+  
+  
+            // Code for Show All Data From IndexedDB  
+            function showAllDataMethod() {  
+                var request = db.transaction(["students"], "readonly").objectStore("students").getAll();  
+                request.onsuccess = function (event) {  
+                    var obj = request.result  
+                    var table = '<table><thead> <th>ID</th> <th>First Name</th> <th>Last Name</th>  <th>City</th> <th>Mobile</th> </thead><tbody>';  
+                    $.each(obj, function () {  
+                        table += '<tr><td>' + this['rollNo'] + '</td> <td>' + this['FirstName'] + '</td>  <td>' + this['LastName'] + '</td>  <td>' + this['City'] + '</td>  <td>' + this['Mobile'] + '</td></tr>';  
+                    });  
+                    table += '</tbody></table>';  
+                    $("#datalist").html(table);  
+                };  
+            }  
+        });  
+  
+    </script>  
+  
+</head>  
+<body>  
+    <form>  
+        <table>  
+  
+            <tr>  
+                <td>  
+                    First Name  
+                </td>  
+                <td>  
+                    <input type="text" name="rollno" id="firstName" />  
+                </td>  
+            </tr>  
+  
+            <tr>  
+                <td>Last Name</td>  
+                <td>  
+                    <input type="text" name="name" id="lastName" />  
+                </td>  
+            </tr>  
+  
+  
+  
+            <tr>  
+                <td>City</td>  
+                <td>  
+                    <input type="text" name="name" id="city" />  
+                </td>  
+            </tr>  
+  
+  
+            <tr>  
+                <td>Mobile</td>  
+                <td>  
+                    <input type="text" name="name" id="mobile" />  
+                </td>  
+            </tr>  
+  
+  
+            <tr>  
+                <td></td>  
+                <td>  
+                    <input type="button" name="addBtn" value="Add" id="addBtn" />  
+                    <input type="button" name="updateBtn" value="Update" id="updateBtn" />  
+                    <input type="button" name="deleteBtn" value="Delete" id="deleteBtn" />  
+                    <input type="button" name="clearBtn" value="Clear" id="clearBtn" />  
+  
+                </td>  
+            </tr>  
+  
+  
+            <tr>  
+                <td colspan="2">  
+                    <div id="result"></div>  
+                </td>  
+            </tr>  
+        </table>  
+  
+        <br />  
+        <br />  
+        <table>  
+            <tr>  
+                <td colspan="2">For Edit Record</td>  
+            </tr>  
+            <tr>  
+                <td>Enter ID</td>  
+                <td>  
+                    <input type="text" id="txtSearch" />  
+                    <input type="button" name="btnShow" value="Show" id="btnShow" />  
+                    <input type="button" name="btnShow" value="ShowAll" id="btnShowAll" />  
+                </td>  
+            </tr>  
+        </table>  
+  
+        <br />  
+        <br />  
+  
+        <div id="datalist"></div>  
+    </form>  
+</body>  
+</html>  
